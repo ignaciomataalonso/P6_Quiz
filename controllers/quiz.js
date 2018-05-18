@@ -153,3 +153,77 @@ exports.check = (req, res, next) => {
         answer
     });
 };
+
+// GET /quizzes/randomplay
+exports.randomplay = (req, res, next) => {
+
+    req.session.randomPlay = req.session.randomPlay || [];
+    const whereOpt = {id: {[Sequelize.Op.notIn] : req.session.randomPlay}};
+    
+    const score = req.session.randomPlay.length;
+
+    models.quiz.count({where:whereOpt})
+
+    .then(count => {
+
+        let ran = Math.floor(Math.random()*count);
+        return models.quiz.findAll({
+            where: whereOpt,
+            offset: ran,
+            limit: 1
+        })
+        .then(quizzes => {
+            return quizzes[0];
+        })
+
+    })
+
+    .then(quiz => {
+
+        if(quiz === undefined) {
+            req.session.alreadyPlayed = [];
+            res.render('quizzes/random_nomore', {
+                score: score
+            });
+        } else {
+            res.render('quizzes/random_play', {
+                quiz: quiz,
+                score: score
+            });
+        }
+
+    })
+
+    .catch(error => {
+
+        req.flash('error', 'ERROR: ' + error.message);
+        next(error);
+
+    })
+};
+
+// GET /quizzes/randomcheck/:quizId(\d+)z
+exports.randomcheck = (req, res, next) => {
+
+    const {quiz, query} = req;
+
+    const answer = query.answer || "";
+    const result = answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim();
+
+    if (result) {
+        if(req.session.randomPlay.indexOf(req.quiz.id) === -1){
+            req.session.randomPlay.push(req.quiz.id);
+        }
+    } else {
+        req.session.randomPlay = [];
+    }
+
+    const score = req.session.randomPlay.length;
+
+    res.render('quizzes/random_result', {
+        answer,
+        result,
+        score
+    });
+
+};
