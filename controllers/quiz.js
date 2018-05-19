@@ -202,7 +202,7 @@ exports.randomplay = (req, res, next) => {
     })
 };
 
-// GET /quizzes/randomcheck/:quizId(\d+)z
+//GET + /quizzes/randomcheck/:quizId?answer=respuesta
 exports.randomcheck = (req, res, next) => {
 
     const {quiz, query} = req;
